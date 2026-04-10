@@ -3,9 +3,12 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "dev": "bun run index.ts"
+  },
   "devDependencies": {
-    "@repo/db" :"*",
-    "auth": "*",
+    "@repo/db": "*",
+    "@repo/auth": "*",
     "@types/bun": "latest"
   },
   "peerDependencies": {
@@ -13,6 +16,7 @@
   },
   "dependencies": {
     "@types/ws": "^8.18.1",
+    "redis": "^5.11.0",
     "ws": "^8.20.0"
   }
 }
