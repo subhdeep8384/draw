@@ -16,13 +16,12 @@ const Layout = ({children} : {
   return (
     <SidebarProvider>
          <AppSidebar />
-    <main>
-      <SidebarTrigger 
-        className='text-3xl'
-       
-      />
-      {children}
-    </main>
+            <main>
+              <SidebarTrigger 
+                className='text-3xl z-50 absolute'
+              />
+              {children}
+            </main>
   </SidebarProvider>
   )
 }

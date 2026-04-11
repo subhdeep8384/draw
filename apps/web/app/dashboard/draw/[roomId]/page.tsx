@@ -1,7 +1,8 @@
-import { DrawingArea } from "@/components/drawingArea";
+import  DrawingArea  from "@/components/drawingArea";
 import { auth } from "@repo/auth/betterAuth";
 import { prisma } from "@repo/db/prisma";
 import { headers } from "next/headers";
+
 interface Props {
   params: Promise<{
     roomId: string
@@ -23,9 +24,10 @@ const Page = async ({
     }
   })
   return (
-    <div className="min-h-screen flex min-w-full">
-      <DrawingArea />
-    </div>
+    <>
+    <DrawingArea />
+    </>
+
   )
 }
 
