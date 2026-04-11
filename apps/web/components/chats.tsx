@@ -24,19 +24,6 @@ const Chats = () => {
     const [socket , setSocket] = useState<WebSocket |null >(null);
     const socketRef = useRef<WebSocket | null>(null);
 
-    useEffect(() =>{
-        if(socketRef.current) {
-            return ;
-        }
-        const ws = new WebSocket("ws://localhost:5000");
-        ws.onopen = () =>{
-            console.log("connected");
-            setSocket(ws);
-            socketRef.current = ws;
-        }
-    },[])
-
-
     useEffect(() => {
         if(!socketRef.current) {  
             return

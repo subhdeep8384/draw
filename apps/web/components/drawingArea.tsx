@@ -1,10 +1,12 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { Canvas , PencilBrush } from "fabric";
+import { useParams } from "next/navigation";
 
 export default function DrawingArea() {
   const canvasRef = useRef(null);
   const [canvas , setCanvas ] = useState<Canvas | null>(null)
+
 
   useEffect(() =>{
     if(canvasRef.current){
@@ -26,7 +28,6 @@ export default function DrawingArea() {
           initCanvas.renderAll();
       };
       resizeCanvas(); 
-      window.addEventListener("resize", resizeCanvas);
       setCanvas(initCanvas)
 
       initCanvas.on("path:created" , (e) =>{
@@ -34,9 +35,6 @@ export default function DrawingArea() {
         const data = path.toJSON();
         console.log(data)
       })
-
-
-
       return () => {
         window.removeEventListener("resize", resizeCanvas);
         initCanvas.dispose()
