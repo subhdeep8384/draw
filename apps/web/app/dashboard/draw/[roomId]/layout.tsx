@@ -21,27 +21,10 @@ import { ChatProvider } from '@/providers/chatProvider'
 const Layout = ({children} : {
     children : React.ReactNode
 }) => {
-    const params = useParams();
-    const roomId = params.roomId;
-  
-    const [socket , setSocket] = useState<WebSocket | null >(null)
-     const socketRef = useRef<WebSocket | null>(null)
-  
-    useEffect(() =>{
-      if(socketRef.current){
-        return 
-      }
-      const ws = new WebSocket("ws://localhost:5000");
-      ws.onopen = () =>{
-              console.log("connected");
-              setSocket(ws);
-              socketRef.current = ws;
-      }
-    } , [])
-    
-  
+
   return (
     <SocketProvider>
+      <ChatProvider>
           <SidebarProvider>
               <AppSidebar />
                   <main>
@@ -51,6 +34,7 @@ const Layout = ({children} : {
                     {children}
                   </main>
         </SidebarProvider>
+      </ChatProvider>
     </SocketProvider>
     
   )
@@ -86,7 +70,7 @@ export function AppSidebar() {
   }));
     }
     return (
-      <ChatProvider>
+
 
       <Sidebar>
         <SidebarHeader 
@@ -117,7 +101,7 @@ export function AppSidebar() {
             <Button onClick={sendMessage}>Send</Button>
         </SidebarFooter>
       </Sidebar>
-    </ChatProvider>
+
     )
   }
 export default Layout

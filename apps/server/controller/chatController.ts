@@ -4,7 +4,7 @@ import type { Request, Response } from "express";
 
 
 export async function chatController(req: Request, res: Response) {
-    console.log("inside chats controller")
+
     try {
         const roomId = req.params.roomId as string;
         if (!roomId) return res.status(400).json({ success: false, error: "roomId is required" });

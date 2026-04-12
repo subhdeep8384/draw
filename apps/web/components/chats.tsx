@@ -15,19 +15,31 @@ const Chats = () => {
     const socket = useContext(SocketContext)
     const { chats, setChats } = useContext(ChatContext)
     const bottomRef = useRef<HTMLDivElement | null>(null);
-
+    
     useEffect(() => {
-        if (!socket)  return
-        socket.onmessage = (event) => {
+        if (!socket) return;
+        const joinRoom = () => {
+            socket.send(JSON.stringify({ type: "join_room", roomId }));
+        };
+
+        const handleMessage = (event: MessageEvent) => {
             const data = JSON.parse(event.data);
-            if (data.type === "connected") {
-                socket.send(JSON.stringify({ type: "join_room", roomId }));
+
+            if (socket.readyState === WebSocket.OPEN) {
+                joinRoom();
             }
+
             if (data.type === "chat") {
                 setChats((prev) => [...prev, data]);
             }
-        }
-    }, [socket, roomId]);
+        };
+
+        socket.addEventListener("message", handleMessage);
+
+        return () => {
+            socket.removeEventListener("message", handleMessage);
+        };
+    }, [socket, roomId, setChats]);
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });

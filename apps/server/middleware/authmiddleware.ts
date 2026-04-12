@@ -11,7 +11,6 @@ declare global {
 
 
 export async function authMiddleware(req : Request , res : Response, next : NextFunction){
-    console.log("Inside auth middleware")
     const cookie = req.headers.cookie ;
     const session = await auth.api.getSession({
         headers : { cookie }
@@ -23,6 +22,5 @@ export async function authMiddleware(req : Request , res : Response, next : Next
     }
 
     req.session = session;
-    console.log("adjasifugsaoifg")
     next() ;
 }
