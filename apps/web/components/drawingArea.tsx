@@ -1,12 +1,18 @@
 "use client";
-import { useEffect, useRef, useState } from "react";
-import { Canvas , PencilBrush } from "fabric";
+import { useContext, useEffect, useRef, useState } from "react";
+import { Canvas , classRegistry, PencilBrush } from "fabric";
+import { SocketContext } from "@/context/socketContext";
 import { useParams } from "next/navigation";
 
-export default function DrawingArea() {
-  const canvasRef = useRef(null);
-  const [canvas , setCanvas ] = useState<Canvas | null>(null)
 
+export default function DrawingArea({roomId} :{
+  roomId : string
+}) {
+  const canvasRef = useRef(null);
+  const [drawData , setDrawData] = useState("")
+  const [canvas , setCanvas ] = useState<Canvas | null>(null)
+  const socket = useContext(SocketContext)
+  
 
   useEffect(() =>{
     if(canvasRef.current){
@@ -27,20 +33,39 @@ export default function DrawingArea() {
           initCanvas.backgroundColor = "#000";
           initCanvas.renderAll();
       };
+     
       resizeCanvas(); 
       setCanvas(initCanvas)
 
       initCanvas.on("path:created" , (e) =>{
         const path = e.path ;
         const data = path.toJSON();
-        console.log(data)
+        setDrawData(data)
       })
+
       return () => {
         window.removeEventListener("resize", resizeCanvas);
         initCanvas.dispose()
       }
     }
   }, [])
+
+  useEffect(() => {
+  if (!drawData) return;
+
+  if (socket?.readyState === WebSocket.OPEN) {
+    socket.send(JSON.stringify({
+      roomId : roomId,
+      type :"draw" ,
+      payload :{
+        message : drawData 
+      }
+    }));
+    setDrawData("");
+  } else {
+    console.log("socket not ready");
+  }
+}, [drawData, socket]);
   
 
   return (

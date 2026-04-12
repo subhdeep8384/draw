@@ -1,5 +1,5 @@
 "use client"
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useContext, useEffect, useRef, useState } from 'react'
 import {
     Sidebar,
     SidebarContent,
@@ -14,6 +14,7 @@ import Chats from '@/components/chats'
 import { useParams } from 'next/navigation'
 import { SocketContext } from '@/context/socketContext'
 import { SocketProvider } from '@/providers/socketProvider'
+import { ChatProvider } from '@/providers/chatProvider'
 
 
 
@@ -37,6 +38,7 @@ const Layout = ({children} : {
               socketRef.current = ws;
       }
     } , [])
+    
   
   return (
     <SocketProvider>
@@ -56,21 +58,66 @@ const Layout = ({children} : {
 
 
 export function AppSidebar() {
+  const params = useParams();
+  const room = params.roomId as string;
+  const socket = useContext(SocketContext)
+  const [message , setMessage ] = useState<{
+    roomId : string,
+    type : "chat",
+    payload : {
+      message : string
+    }
+  }>({
+    roomId : room ,
+    type: "chat",
+    payload:{
+      message : ""
+    }
+  })
+
+
+    const sendMessage = () =>{
+      socket?.send(JSON.stringify(message))
+      setMessage(prev => ({
+        ...prev,
+        payload: {
+          message: ""
+      }
+  }));
+    }
     return (
+      <ChatProvider>
+
       <Sidebar>
         <SidebarHeader 
             className='text-2xl font-bold flex items-center'
-        >
+            >
             Chats
         </SidebarHeader>
         <SidebarContent>
           <Chats />
         </SidebarContent>
         <SidebarFooter >
-            <Input placeholder="Message.." />
-            <Button>Send</Button>
+            <Input placeholder="Message.." 
+            onKeyDown={(e) =>{
+              if(e.key === "Enter"){
+                e.preventDefault() ;
+                sendMessage()
+              }
+            }}
+            value={message.payload.message}
+            onChange={( e ) => 
+              setMessage(prev => ({
+                ...prev , 
+                payload :{
+                  message : e.target.value
+                }
+              }))}
+              />
+            <Button onClick={sendMessage}>Send</Button>
         </SidebarFooter>
       </Sidebar>
+    </ChatProvider>
     )
   }
 export default Layout

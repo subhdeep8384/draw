@@ -3,12 +3,14 @@ import { auth } from "@repo/auth/betterAuth";
 import { prisma } from "@repo/db/prisma";
 import { createRedisClient } from "./redisClient/redis";
 
+
 const { pub, sub } = await createRedisClient();
 
 const wss = new WebSocketServer({ port: 5000 });
 
 const userSockets = new Map<string, Set<WebSocket>>();
 const roomSockets = new Map<string, Set<string>>();
+
 
 function getBetterAuthCookie(cookie: string | undefined) {
   if (!cookie) return null;
@@ -23,15 +25,11 @@ await sub.pSubscribe("room:*", async (message, channel) => {
   try {
 
     const data = JSON.parse(message);
-
     const roomId = channel.split(":")[1];
     const users = roomSockets.get(roomId || "");
     if (!users) return;
 
     users.forEach((user) => {
-
-      if (user !== data.userId) return;
-
       const sockets = userSockets.get(user);
       if (!sockets) return;
 
@@ -68,9 +66,24 @@ wss.on("connection", async (ws, req) => {
     ws.on("message", async (raw) => {
       const data = JSON.parse(raw.toString());
       const { type, roomId, payload } = data;
+      const room = await prisma.room.findUnique({ where: { id: roomId } });
+
+
+      if(type === "draw"){
+        console.log(payload)
+      }
+
+
+
+
+
+
+
+
+
+
 
       if (type === "join_room") {
-        const room = await prisma.room.findUnique({ where: { id: roomId } });
         if (!room) return;  
         if (!roomSockets.has(roomId)) {
           roomSockets.set(roomId, new Set());

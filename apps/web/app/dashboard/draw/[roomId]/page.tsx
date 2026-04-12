@@ -25,7 +25,7 @@ const Page = async ({
   })
   return (
     <>
-    <DrawingArea />
+    <DrawingArea roomId={roomId}/>
     </>
 
   )

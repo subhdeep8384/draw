@@ -8,15 +8,6 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const ws = new WebSocket("ws://localhost:5000");
-
-    ws.onopen = () => {
-      console.log("connected");
-    };
-
-    ws.onclose = () => {
-      console.log("disconnected");
-    };
-
     setSocket(ws);
 
     return () => {
