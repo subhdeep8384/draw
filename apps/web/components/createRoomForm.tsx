@@ -20,6 +20,7 @@ import { Dispatch, SetStateAction, useState } from "react"
 import { toast } from "sonner"
 
 import axios from "axios"
+import { classRegistry } from "fabric"
 
 
 interface LoginFormProps {
@@ -33,6 +34,7 @@ export function CreateRoomForm({
 
   const newRoomCreateSchema = z.object({
     name : z.string().min(3).max(50) ,
+    password : z.string().min(6).max(30).optional() 
   })
   const {
     register,
@@ -41,35 +43,56 @@ export function CreateRoomForm({
   } = useForm({
     resolver: zodResolver(newRoomCreateSchema),
   })
+
+  const [action , setAction ] = useState<"create" | "join">("create")
   const [loading , setLoading ] = useState(false);
   const router = useRouter()
+
   const submit = async (data :{
-    name : string 
+    name : string ,
+    password? : string 
+
   }) =>{
-    try{
-      setLoading(true)
-      console.log(data)
-      const res = await axios.post("http://localhost:3005/api/room/create" , {
-        name : data.name
-      }, {
-        withCredentials : true
-      })
-
-      if(res.status === 200){
-        toast.success("Room created successfully")
-        setFormOpen(false)
-        router.push("/dashboard")
-        setRefresh( (e) => !e )
+      if(action === "create"){
+        try{
+          setLoading(true)
+          const res = await axios.post("http://localhost:3005/api/room/create" , {
+            name : data.name ,
+            password : data.password
+          }, {
+            withCredentials : true
+          })
+          
+          if(res.status === 200){
+            toast.success("Room created successfully")
+            setFormOpen(false)
+            router.push("/dashboard")
+            setRefresh( (e) => !e )
+          }
+        }catch(e){
+          console.log(e)
+        }finally{
+          setLoading(false)
+        }
       }
-    }catch(e){
-      console.log(e)
-    }finally{
-      setLoading(false)
-    }
-  }
 
-  return (
-    <Dialog open={formOpen} onOpenChange={setFormOpen}>
+      if(action === "join"){
+       const res = await axios.post("http://localhost:3005/api/room/join" ,{
+        name : data.name ,
+        password : data.password 
+       },{
+        withCredentials :true
+       })
+       if ((await res).status !== 200 ){
+          return 
+       }
+       
+       router.push(`/dashboard/draw/${res.data.roomId}`)
+      }
+    }
+    
+    return (
+      <Dialog open={formOpen} onOpenChange={setFormOpen}>
         <DialogContent className="sm:max-w-sm">
         <form onSubmit={handleSubmit(submit)} >
           <DialogHeader>
@@ -81,16 +104,28 @@ export function CreateRoomForm({
           <FieldGroup>
             <Field>
               <Label htmlFor="email">Name</Label>
-              <Input {...register("name")} id="name" name="name" defaultValue="name@gmail.com" />
+              <Input {...register("name")} id="name" name="name" placeholder="enter room name" />
               {errors.name && <span className="text-red-500">{errors.name.message}</span>}
+            </Field>
+             <Field>
+              <Label htmlFor="password">Password</Label>
+              <Input {...register("password")} id="password" name="password" placeholder="enter room password" />
+              {errors.password && <span className="text-red-500">{errors.password?.message}</span>}
             </Field>
           </FieldGroup>
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
             </DialogClose>
-            <Button type="submit">{
+            <Button 
+              onClick={() => setAction("create")}
+              type="submit">{
                 loading ?  <Spinner className="size-4" /> : "Create"
+              }</Button>
+              <Button 
+                onClick={() => setAction("join")}
+              type="submit">{
+                loading ?  <Spinner className="size-4" /> : "Join"
               }</Button>
           </DialogFooter>
         </form>

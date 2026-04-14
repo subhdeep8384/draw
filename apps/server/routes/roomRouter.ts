@@ -7,9 +7,11 @@ import {  roomCreate } from "../controller/roomController";
 import { roomJoin } from "../controller/roomJoin";
 import { getRooms } from "../controller/getRooms";
 import { deleteRoom } from "../controller/deleteRoom";
+import { joinRoom } from "../controller/joinRoom";
 
 export  const roomRouter = Router();
 
 roomRouter.post("/create" , authMiddleware  , roomCreate);
+roomRouter.post("/join" , authMiddleware , joinRoom );
 roomRouter.get("/allRooms" , authMiddleware , getRooms)
 roomRouter.post("/delete/:roomId" , authMiddleware , deleteRoom)

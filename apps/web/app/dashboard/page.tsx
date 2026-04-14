@@ -96,8 +96,9 @@ const DashBoard = () => {
           <Button className="px-12 py-4"
             onClick={() => setNewRoomFormOpen(t => !t)}
           >
-            create room
+            Rooms
           </Button>
+         
         </div>
       </div>
 
