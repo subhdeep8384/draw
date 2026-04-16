@@ -4,6 +4,9 @@ import { Line, Rectangle, Shape , circle } from "./shape";
 export class Canvas {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
+  private offset = { x: 0, y: 0 }; //give the position of el when we mouse down 
+
+
 
   constructor(canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext("2d");
@@ -16,33 +19,45 @@ export class Canvas {
     this.ctx = ctx;
   }
 
+  
+  pan(dx: number, dy: number) {
+    this.offset.x += dx;
+    this.offset.y += dy;
+  }
+
   clear() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
-  
 
-  render(shapes: Shape[]) {
-  const ctx = this.ctx;
+getOffset() {
+  return this.offset;
+} 
 
-  ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+render(shapes: Shape[]) {
+    const ctx = this.ctx;
+    this.clear();
 
-  shapes.forEach((shape) => {
-    ctx.beginPath();
-    ctx.strokeStyle = "white"; 
-    ctx.lineWidth = 2;
+    this.ctx.save();
+    this.ctx.translate(this.offset.x, this.offset.y);
 
-    if (shape.type === "rectangle") {
-      this.drawRectangle(shape)
-    }
+    shapes.forEach((shape) => {
+      ctx.beginPath();
+      ctx.strokeStyle = "white"; 
+      ctx.lineWidth = 2;
 
-    if (shape.type === "line") {
-      this.drawLine(shape)
-    }
-    if(shape.type === "circle"){
-      this.drawCircle(shape)
-    }
-  });
+      if (shape.type === "rectangle") {
+        this.drawRectangle(shape)
+      }
+
+      if (shape.type === "line") {
+        this.drawLine(shape)
+      }
+      if(shape.type === "circle"){
+        this.drawCircle(shape)
+      }
+    });
+    this.ctx.restore();
 }
 
 

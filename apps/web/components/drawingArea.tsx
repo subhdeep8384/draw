@@ -9,9 +9,8 @@ import { Tool, ToolType } from "@/types/Tools";
 
 
 
-
-
 export default function DrawingArea() {
+  const [renderTick, forceRender] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const canvasInstanceRef = useRef<Canvas | null>(null);
 
@@ -23,71 +22,78 @@ export default function DrawingArea() {
   const startPoint = useRef<{ x: number; y: number } | null>(null);
   const [previewShape, setPreviewShape] = useState<Shape | null>(null);
 
+  // grab logic 
+  const panStart = useRef<{ x: number; y: number } | null>(null);
 
 
-  useEffect(() => {
-    if (selectedTool) {
-      console.log(selectedTool)
-      setTool(selectedTool.type as ToolType);
-    }
-  }, [selectedTool]);
+const getScreenPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const rect = e.currentTarget.getBoundingClientRect();
 
-
-  useEffect(() => {
-    if (!canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    };
-
-    resize();
-    window.addEventListener("resize", resize);
-
-    canvasInstanceRef.current = new Canvas(canvas);
-
-    return () => window.removeEventListener("resize", resize);
-  }, []);
-
-
-  useEffect(() => {
-    if (!canvasInstanceRef.current) return;
-
-    const canvas = canvasInstanceRef.current;
-
-    canvas.clear();
-
-    const allShapes = [...shapes];
-
-    if (previewShape) {
-      allShapes.push(previewShape);
-    }
-
-    canvas.render(allShapes);
-  }, [shapes, previewShape]);
-
-  const getPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-
-    return {
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    };
+  return {
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top,
   };
+};
+
+const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const rect = e.currentTarget.getBoundingClientRect();
+
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  const offset = canvasInstanceRef.current?.getOffset() || { x: 0, y: 0 };
+
+  return {
+    x: x - offset.x,
+    y: y - offset.y,
+  };
+};
+
+
+ const getPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const rect = e.currentTarget.getBoundingClientRect();
+
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+
+  
+ const offset = canvasInstanceRef.current?.getOffset() || { x: 0, y: 0 };
+
+  return {
+    x: x - offset.x,
+    y: y - offset.y,
+  };
+};
+
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-
-    startPoint.current = getPoint(e);
+    if (tool === "grab") {
+      panStart.current = getScreenPoint(e);
+      return;
+    }
+    startPoint.current = getWorldPoint(e);
     isDrawing.current = true;
   };
 
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
 
+    const current = getWorldPoint(e)
+    
+    
+    if (tool === "grab" && panStart.current && canvasInstanceRef.current) {
+      const current = getScreenPoint(e);
+      const dx = current.x - panStart.current.x;
+      const dy = current.y - panStart.current.y;
+      
+      canvasInstanceRef.current.pan(dx, dy);
+      
+      panStart.current = current;
+      
+      forceRender((p) => p + 1);      
+      return;
+    }
+    
     if (!isDrawing.current || !startPoint.current) return;
-
-    const current = getPoint(e);
 
     if (tool === "rectangle") {
       setPreviewShape({
@@ -122,6 +128,10 @@ export default function DrawingArea() {
   };
 
   const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (tool === "grab") {
+      panStart.current = null;
+      return;
+    }
 
     if (!isDrawing.current || !startPoint.current) return;
 
@@ -161,13 +171,53 @@ export default function DrawingArea() {
       };
     }
 
-    setShapes((prev) => [...prev, newShape]);
-
+    setShapes((prev) => [...prev, newShape]);  
     isDrawing.current = false;
     startPoint.current = null;
     setPreviewShape(null);
   };
 
+
+  useEffect(() => {
+    if (!canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+
+    resize();
+    window.addEventListener("resize", resize);
+
+    canvasInstanceRef.current = new Canvas(canvas);
+
+    return () => window.removeEventListener("resize", resize);
+  }, []);
+
+
+  useEffect(() => {
+    if (!canvasInstanceRef.current) return;
+
+    const canvas = canvasInstanceRef.current;
+    const allShapes = [...shapes];
+
+    if (previewShape) {
+      allShapes.push(previewShape);
+    }
+
+    canvas.render(allShapes);
+  }, [shapes, previewShape , renderTick]);
+
+
+   useEffect(() => {
+    if (selectedTool) {
+      setTool(selectedTool.type as ToolType);
+    }
+  }, [selectedTool]);
+
+  
 
   return (
     <div className="w-full h-screen flex flex-col">
@@ -177,7 +227,7 @@ export default function DrawingArea() {
       <div className="flex-1">
         <canvas
           ref={canvasRef}
-          style={{ width: "100%", height: "100%", display: "block" }}
+          style={{ width: "100%", height: "100%", display: "block" ,cursor: tool === "grab" ? "grab" : "crosshair",}}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
