@@ -1,7 +1,10 @@
-import  DrawingArea  from "@/components/drawingArea";
+
+import DrawingArea from "@/components/drawingArea";
 import { auth } from "@repo/auth/betterAuth";
 import { prisma } from "@repo/db/prisma";
 import { headers } from "next/headers";
+
+
 
 interface Props {
   params: Promise<{
@@ -12,6 +15,9 @@ interface Props {
 const Page = async ({
   params
 }: Props) => {
+
+
+ 
   const user = await auth.api.getSession({
     headers: await headers()
   })
@@ -24,10 +30,9 @@ const Page = async ({
     }
   })
   return (
-    <>
-    <DrawingArea roomId={roomId}/>
-    </>
-
+    <div>
+      <DrawingArea/>
+    </div>
   )
 }
 
