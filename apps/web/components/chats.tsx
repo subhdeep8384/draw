@@ -12,12 +12,12 @@ import { ChatContext } from '@/context/chatContext';
 const Chats = () => {
     const params = useParams();
     const roomId = params.roomId;
-    const socket = useContext(SocketContext)
+    const { socket , isConnected } = useContext(SocketContext)
     const { chats, setChats } = useContext(ChatContext)
     const bottomRef = useRef<HTMLDivElement | null>(null);
     
     useEffect(() => {
-        if (!socket) return;
+        if (!socket || !isConnected) return;
         const joinRoom = () => {
             socket.send(JSON.stringify({ type: "join_room", roomId }));
         };

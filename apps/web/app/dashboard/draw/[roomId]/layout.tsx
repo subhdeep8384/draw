@@ -22,6 +22,7 @@ const Layout = ({children} : {
     children : React.ReactNode
 }) => {
 
+
   return (
     <SocketProvider>
       <ChatProvider>
@@ -44,7 +45,11 @@ const Layout = ({children} : {
 export function AppSidebar() {
   const params = useParams();
   const room = params.roomId as string;
-  const socket = useContext(SocketContext)
+
+
+  const { socket , isConnected} = useContext(SocketContext)
+
+
   const [message , setMessage ] = useState<{
     roomId : string,
     type : "chat",
@@ -59,7 +64,6 @@ export function AppSidebar() {
     }
   })
 
-
     const sendMessage = () =>{
       socket?.send(JSON.stringify(message))
       setMessage(prev => ({
@@ -67,8 +71,18 @@ export function AppSidebar() {
         payload: {
           message: ""
       }
-  }));
+      }));
     }
+  
+  useEffect(() => {
+  if (!socket || !isConnected) return;
+  socket.send(JSON.stringify({
+    "type": "join_room",
+    "roomId": room,
+    "payload": { message: "" }
+  }))}, [isConnected]);
+
+  
     return (
 
 

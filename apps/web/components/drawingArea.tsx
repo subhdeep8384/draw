@@ -1,15 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { Canvas } from "../canvas/canvas";
 import { Shape } from "../canvas/shape";
 import { ToolsArray } from "./toolsArray";
 import { Tool, ToolType } from "@/types/Tools";
+import { SocketContext } from "@/context/socketContext";
 
 
 
-
-export default function DrawingArea() {
+export default function DrawingArea({session , roomId} : any  ) {
+  const {session : data , user } = session
   const [renderTick, forceRender] = useState(0);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const canvasInstanceRef = useRef<Canvas | null>(null);
@@ -22,18 +23,17 @@ export default function DrawingArea() {
   const startPoint = useRef<{ x: number; y: number } | null>(null);
   const [previewShape, setPreviewShape] = useState<Shape | null>(null);
 
-  // grab logic 
   const panStart = useRef<{ x: number; y: number } | null>(null);
+  const { socket , isConnected } = useContext(SocketContext)
 
+  const getScreenPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
 
-const getScreenPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
-  const rect = e.currentTarget.getBoundingClientRect();
-
-  return {
-    x: e.clientX - rect.left,
-    y: e.clientY - rect.top,
+    return {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    };
   };
-};
 
 const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
   const rect = e.currentTarget.getBoundingClientRect();
@@ -170,12 +170,22 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
         y2: end.y,
       };
     }
-
+   
+    socket?.send(JSON.stringify({
+      type : "draw" ,
+      roomId : roomId,
+      payload : {
+        userId : user.id,
+        message : newShape
+      }
+    }))
     setShapes((prev) => [...prev, newShape]);  
     isDrawing.current = false;
     startPoint.current = null;
     setPreviewShape(null);
   };
+
+
 
 
   useEffect(() => {
@@ -190,7 +200,6 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
 
     resize();
     window.addEventListener("resize", resize);
-
     canvasInstanceRef.current = new Canvas(canvas);
 
     return () => window.removeEventListener("resize", resize);

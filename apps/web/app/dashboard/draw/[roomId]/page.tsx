@@ -31,7 +31,7 @@ const Page = async ({
   })
   return (
     <div>
-      <DrawingArea/>
+      <DrawingArea session={user} roomId={roomId}/>
     </div>
   )
 }
