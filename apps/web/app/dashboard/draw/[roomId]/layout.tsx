@@ -15,6 +15,7 @@ import { useParams } from 'next/navigation'
 import { SocketContext } from '@/context/socketContext'
 import { SocketProvider } from '@/providers/socketProvider'
 import { ChatProvider } from '@/providers/chatProvider'
+import { ChatContext } from '@/context/chatContext'
 
 
 
@@ -45,9 +46,27 @@ const Layout = ({children} : {
 export function AppSidebar() {
   const params = useParams();
   const room = params.roomId as string;
-
+  const {chats , setChats} = useContext(ChatContext)
 
   const { socket , isConnected} = useContext(SocketContext)
+
+     useEffect(() => {
+      
+        const handleMessage = (event: MessageEvent) => {
+            const data = JSON.parse(event.data);
+            console.log(data)
+            if (data.type === "chat") {
+                setChats((prev) => [...prev, data]);
+            }
+        };
+        console.log("hi from appsidebar")
+        console.log("socket is " , socket)
+        socket?.addEventListener("message", handleMessage);
+
+        return () => {
+            socket?.removeEventListener("message", handleMessage);
+        };
+    }, [socket]); 
 
 
   const [message , setMessage ] = useState<{
@@ -65,6 +84,7 @@ export function AppSidebar() {
   })
 
     const sendMessage = () =>{
+      setChats((prev ) =>[...prev , message])
       socket?.send(JSON.stringify(message))
       setMessage(prev => ({
         ...prev,

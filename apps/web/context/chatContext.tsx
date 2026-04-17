@@ -1,14 +1,14 @@
 import { createContext } from "react";
 
-interface ChatType{
-    "id": string,
-    "type": string,
-    "roomId": string,
-    "payload": {
+export  interface ChatType{
+    id?: string,
+    type: string,
+    roomId: string,
+    payload: {
         "message": string,
     }
-    "userId": string,
-    "timestamp": number,
+    userId?: string,
+    timestamp?: number,
 }
 
 type ChatContextType = {

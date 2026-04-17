@@ -23,26 +23,19 @@ const processedMessages = new Set<string>();
 
 await sub.pSubscribe("room:*", async (message, channel) => {
   try {
-
     const data = JSON.parse(message);
-    console.log("data is ",data)
     const roomId = channel.split(":")[1];
-    console.log(roomId)
     const users = roomSockets.get(roomId || "");
-    console.log("user" , users)
     if (!users) return;
-
     users.forEach((user) => {
 
-      if(user === data.payload.userId){
-        return
-      }  
       const sockets = userSockets.get(user);
       if (!sockets) return;
-
+      
       sockets.forEach((w) => {
-        console.log("sending " , data)
-        w.send(JSON.stringify(data));
+          if(user !== data.userId){
+            w.send(JSON.stringify(data));
+          } 
       });
 
     });
@@ -86,7 +79,7 @@ wss.on("connection", async (ws, req) => {
           roomSockets.set(roomId, new Set());
         }
         roomSockets.get(roomId)!.add(userId);
-        console.log("room socket si " ,roomSockets)
+  
         ws.send(JSON.stringify({ type: "joined_room", roomId }));
         return;
       }

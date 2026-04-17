@@ -9,37 +9,14 @@ import { ChatContext } from '@/context/chatContext';
 
 
 
-const Chats = () => {
+const Chats = ( ) => {
     const params = useParams();
     const roomId = params.roomId;
     const { socket , isConnected } = useContext(SocketContext)
     const { chats, setChats } = useContext(ChatContext)
     const bottomRef = useRef<HTMLDivElement | null>(null);
     
-    useEffect(() => {
-        if (!socket || !isConnected) return;
-        const joinRoom = () => {
-            socket.send(JSON.stringify({ type: "join_room", roomId }));
-        };
 
-        const handleMessage = (event: MessageEvent) => {
-            const data = JSON.parse(event.data);
-
-            if (socket.readyState === WebSocket.OPEN) {
-                joinRoom();
-            }
-
-            if (data.type === "chat") {
-                setChats((prev) => [...prev, data]);
-            }
-        };
-
-        socket.addEventListener("message", handleMessage);
-
-        return () => {
-            socket.removeEventListener("message", handleMessage);
-        };
-    }, [socket, roomId, setChats]);
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -49,7 +26,7 @@ const Chats = () => {
         <div>
             {chats.length === 0 && <p>No chats yet</p>}
             {chats.map((chat) => (
-                <Card className="p-2 m-3" key={chat.id}>
+                <Card className="p-2 m-3" key={chat.id ?? Math.random()}>
                     <CardContent>
                         <p>{chat.payload.message}</p>
                     </CardContent>
