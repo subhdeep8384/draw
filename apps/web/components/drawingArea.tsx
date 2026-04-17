@@ -7,6 +7,7 @@ import { ToolsArray } from "./toolsArray";
 import { Tool, ToolType } from "@/types/Tools";
 import { SocketContext } from "@/context/socketContext";
 import { parse } from "path";
+import { toast } from "sonner";
 
 
 
@@ -198,6 +199,16 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
   };
 
     socket?.addEventListener("message" , handleDraw)
+
+    if(!isConnected){
+      toast.loading("waiting to connect to the room" )
+    }else{
+      toast.success("connected to the room " , roomId)
+    }
+
+    return () =>{
+      socket?.removeEventListener("message" , handleDraw)
+    }
   } , [isConnected])
 
   useEffect(() => {
