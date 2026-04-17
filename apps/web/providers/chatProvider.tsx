@@ -1,16 +1,5 @@
-import { ChatContext } from "@/context/chatContext";
+import { ChatContext, ChatType } from "@/context/chatContext";
 import { useState } from "react";
-
-interface ChatType {
-  id: string;
-  type: string;
-  roomId: string;
-  payload: {
-    message: string;
-  };
-  userId: string;
-  timestamp: number;
-}
 
 type ChatContextType = {
   chats: ChatType[];

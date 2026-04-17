@@ -6,6 +6,7 @@ import { Shape } from "../canvas/shape";
 import { ToolsArray } from "./toolsArray";
 import { Tool, ToolType } from "@/types/Tools";
 import { SocketContext } from "@/context/socketContext";
+import { parse } from "path";
 
 
 
@@ -174,8 +175,8 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
     socket?.send(JSON.stringify({
       type : "draw" ,
       roomId : roomId,
+      userId : user.id,
       payload : {
-        userId : user.id,
         message : newShape
       }
     }))
@@ -186,22 +187,35 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
   };
 
 
+  useEffect(() =>{
+    console.log("socket is " , socket)
+    const handleDraw = (e: MessageEvent) => {
+    const data = JSON.parse(e.data);
 
+    if (data.type === "draw") {
+      setShapes((prev) =>[...prev , data.payload.message])
+    }
+  };
+
+    socket?.addEventListener("message" , handleDraw)
+  } , [isConnected])
 
   useEffect(() => {
+
     if (!canvasRef.current) return;
-
+    
     const canvas = canvasRef.current;
-
+    
     const resize = () => {
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     };
-
+    
     resize();
     window.addEventListener("resize", resize);
     canvasInstanceRef.current = new Canvas(canvas);
-
+    
+    
     return () => window.removeEventListener("resize", resize);
   }, []);
 

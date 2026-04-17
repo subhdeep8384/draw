@@ -16,6 +16,8 @@ import { SocketContext } from '@/context/socketContext'
 import { SocketProvider } from '@/providers/socketProvider'
 import { ChatProvider } from '@/providers/chatProvider'
 import { ChatContext } from '@/context/chatContext'
+import { toast } from "sonner";
+
 
 
 
@@ -42,25 +44,20 @@ const Layout = ({children} : {
   )
 }
 
-
 export function AppSidebar() {
   const params = useParams();
   const room = params.roomId as string;
   const {chats , setChats} = useContext(ChatContext)
-
   const { socket , isConnected} = useContext(SocketContext)
 
      useEffect(() => {
-      
         const handleMessage = (event: MessageEvent) => {
             const data = JSON.parse(event.data);
-            console.log(data)
             if (data.type === "chat") {
+                toast.info(data.payload.message)
                 setChats((prev) => [...prev, data]);
             }
         };
-        console.log("hi from appsidebar")
-        console.log("socket is " , socket)
         socket?.addEventListener("message", handleMessage);
 
         return () => {

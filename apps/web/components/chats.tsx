@@ -10,13 +10,8 @@ import { ChatContext } from '@/context/chatContext';
 
 
 const Chats = ( ) => {
-    const params = useParams();
-    const roomId = params.roomId;
-    const { socket , isConnected } = useContext(SocketContext)
     const { chats, setChats } = useContext(ChatContext)
     const bottomRef = useRef<HTMLDivElement | null>(null);
-    
-
 
     useEffect(() => {
         bottomRef.current?.scrollIntoView({ behavior: "smooth" });
