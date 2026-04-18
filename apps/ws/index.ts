@@ -66,12 +66,19 @@ wss.on("connection", async (ws, req) => {
 
     ws.on("message", async (raw) => {
       const data = JSON.parse(raw.toString());
-     
       const { type, roomId, payload } = data;
-  
       const room = await prisma.room.findUnique({ where: { id: roomId } });
 
 
+      if(type == "preview"){
+        const event = {
+          type: "preview",
+          roomId,
+          payload,
+          userId,
+        };
+        await pub.publish(`room:${roomId}`, JSON.stringify(event));
+      }
 
       if (type === "join_room") {
         if (!room) return;  
@@ -115,9 +122,6 @@ wss.on("connection", async (ws, req) => {
         };
         await pub.publish(`room:${roomId}`, JSON.stringify(event));
       }
-
-
-
     });
 
     

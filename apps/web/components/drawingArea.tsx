@@ -6,7 +6,6 @@ import { Shape } from "../canvas/shape";
 import { ToolsArray } from "./toolsArray";
 import { Tool, ToolType } from "@/types/Tools";
 import { SocketContext } from "@/context/socketContext";
-import { parse } from "path";
 import { toast } from "sonner";
 
 
@@ -98,6 +97,22 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!isDrawing.current || !startPoint.current) return;
 
     if (tool === "rectangle") {
+     
+      socket?.send(JSON.stringify({
+        type : "preview",
+        roomId : roomId,
+        userId : user.id,
+        payload :{
+          message :{
+        type: "rectangle",
+        x: startPoint.current.x,
+        y: startPoint.current.y,
+        width: current.x - startPoint.current.x,
+        height: current.y - startPoint.current.y,
+      }
+      }}))
+
+
       setPreviewShape({
         type: "rectangle",
         x: startPoint.current.x,
@@ -111,6 +126,24 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
       const dx = current.x - startPoint.current.x;
       const dy = current.y - startPoint.current.y;
       const radius = Math.sqrt(dx * dx + dy * dy);
+
+   
+
+      socket?.send(JSON.stringify({
+        type : "preview",
+        roomId : roomId,
+        userId : user.id,
+        payload :{
+          message :{
+        type: "circle",
+        roomId : roomId,
+        userId : user.id,
+        x: startPoint.current.x,
+        y: startPoint.current.y,
+        radius
+      }
+      }}))
+
       setPreviewShape({
         type: "circle",
         x: startPoint.current.x,
@@ -119,6 +152,23 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
       })
     }
     else {
+    
+      socket?.send(JSON.stringify({
+        type : "preview",
+        roomId : roomId,
+        userId : user.id,
+        payload :{
+          message :{
+                type: "line",
+                roomId : roomId,
+                userId : user.id,
+                x1: startPoint.current.x,
+                y1: startPoint.current.y,
+                x2: current.x,
+                y2: current.y,
+          }
+      }}))
+
       setPreviewShape({
         type: "line",
         x1: startPoint.current.x,
@@ -189,13 +239,18 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
 
 
   useEffect(() =>{
-    console.log("socket is " , socket)
+
     const handleDraw = (e: MessageEvent) => {
     const data = JSON.parse(e.data);
 
+    if(data.type === "preview"){
+      setPreviewShape(data.payload.message)
+    }
     if (data.type === "draw") {
+      setPreviewShape(null)
       setShapes((prev) =>[...prev , data.payload.message])
     }
+
   };
 
     socket?.addEventListener("message" , handleDraw)
