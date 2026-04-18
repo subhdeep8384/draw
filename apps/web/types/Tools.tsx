@@ -10,7 +10,7 @@ import {
     MoveRight,
     TextIcon
 } from "lucide-react"
-import z from "zod";
+
 export type ToolType =
   | "selection"
   | "grab"
@@ -30,9 +30,6 @@ export type Tool = {
   label: string;
   shortcut: number;
 };
-
-
-
 
 export const tools: Tool[] = [
     {

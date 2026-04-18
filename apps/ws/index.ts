@@ -92,16 +92,21 @@ wss.on("connection", async (ws, req) => {
       }
 
       if (type === "chat") {
-        const chat = await prisma.chat.create({
-          data: {
-            message: payload.message,
-            userId,
-            roomId,
-          },
-        });
+
+        // STORING CHATS REMOVED
+        
+        // const chat = await prisma.chat.create({
+        //   data: {
+        //     message: payload.message,
+        //     userId,
+        //     roomId,
+        //   },
+        // });
+
+        const id = Math.random() * 9 ;
 
         const event = {
-          id: chat.id,
+          id: id,
           type: "chat",
           roomId,
           payload,

@@ -21,4 +21,9 @@ export interface circle {
   radius: number;
 }
 
-export type Shape = | Rectangle | Line | circle 
+export interface freeDraw{
+    type : "free-Draw",
+    points: { x: number; y: number }[];
+}
+
+export type Shape = | Rectangle | Line | circle  | freeDraw

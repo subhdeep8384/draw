@@ -2,7 +2,7 @@
 
 import { useContext, useEffect, useRef, useState } from "react";
 import { Canvas } from "../canvas/canvas";
-import { Shape } from "../canvas/shape";
+import { freeDraw, Shape } from "../canvas/shape";
 import { ToolsArray } from "./toolsArray";
 import { Tool, ToolType } from "@/types/Tools";
 import { SocketContext } from "@/context/socketContext";
@@ -16,13 +16,14 @@ export default function DrawingArea({session , roomId} : any  ) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const canvasInstanceRef = useRef<Canvas | null>(null);
 
+  const [previewShape, setPreviewShape] = useState<Shape | null>(null);
   const [shapes, setShapes] = useState<Shape[]>([]);
   const [selectedTool, setSelectedTool] = useState<Tool | null>(null);
   const [tool, setTool] = useState<ToolType>("circle");
 
+  const currentPath = useRef<{ x: number; y: number }[]>([]);
   const isDrawing = useRef(false);
   const startPoint = useRef<{ x: number; y: number } | null>(null);
-  const [previewShape, setPreviewShape] = useState<Shape | null>(null);
 
   const panStart = useRef<{ x: number; y: number } | null>(null);
   const { socket , isConnected } = useContext(SocketContext)
@@ -72,6 +73,11 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
       panStart.current = getScreenPoint(e);
       return;
     }
+  if (tool === "free-draw") {
+    isDrawing.current = true;
+    currentPath.current = [getWorldPoint(e)];
+    return;
+  }
     startPoint.current = getWorldPoint(e);
     isDrawing.current = true;
   };
@@ -93,6 +99,26 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
       forceRender((p) => p + 1);      
       return;
     }
+    if (tool === "free-draw" && isDrawing.current) {
+      const point = getWorldPoint(e);
+      currentPath.current.push(point);
+
+      const shape : freeDraw = {
+        type: "free-Draw",
+        points: [...currentPath.current],
+      };
+
+    setPreviewShape(shape);
+
+    socket?.send(JSON.stringify({
+      type: "preview",
+      roomId,
+      userId: user.id,
+      payload: { message: shape }
+    }));
+
+    return;
+  }
     
     if (!isDrawing.current || !startPoint.current) return;
 
@@ -104,12 +130,12 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
         userId : user.id,
         payload :{
           message :{
-        type: "rectangle",
-        x: startPoint.current.x,
-        y: startPoint.current.y,
-        width: current.x - startPoint.current.x,
-        height: current.y - startPoint.current.y,
-      }
+            type: "rectangle",
+            x: startPoint.current.x,
+            y: startPoint.current.y,
+            width: current.x - startPoint.current.x,
+            height: current.y - startPoint.current.y,
+        }
       }}))
 
 
@@ -184,6 +210,26 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
       panStart.current = null;
       return;
     }
+   if (tool === "free-draw" && isDrawing.current) {
+      const newShape : freeDraw = {
+        type: "free-Draw",
+        points: [...currentPath.current],
+      };
+
+    setShapes(prev => [...prev, newShape]);
+
+    socket?.send(JSON.stringify({
+      type: "draw",
+      roomId,
+      userId: user.id,
+      payload: { message: newShape }
+    }));
+
+    isDrawing.current = false;
+    currentPath.current = [];
+    setPreviewShape(null);
+    return;
+  }
 
     if (!isDrawing.current || !startPoint.current) return;
 
@@ -241,22 +287,20 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
   useEffect(() =>{
 
     const handleDraw = (e: MessageEvent) => {
-    const data = JSON.parse(e.data);
+      const data = JSON.parse(e.data);
 
-    if(data.type === "preview"){
-      setPreviewShape(data.payload.message)
-    }
-    if (data.type === "draw") {
-      setPreviewShape(null)
-      setShapes((prev) =>[...prev , data.payload.message])
-    }
-
+      if(data.type === "preview"){
+        setPreviewShape(data.payload.message)
+      }
+      if (data.type === "draw") {
+        setPreviewShape(null)
+        setShapes((prev) =>[...prev , data.payload.message])
+      }
   };
 
     socket?.addEventListener("message" , handleDraw)
-
     if(!isConnected){
-      toast.loading("waiting to connect to the room" )
+      
     }else{
       toast.success("connected to the room " , roomId)
     }
@@ -267,7 +311,8 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
   } , [isConnected])
 
   useEffect(() => {
-
+    
+    
     if (!canvasRef.current) return;
     
     const canvas = canvasRef.current;

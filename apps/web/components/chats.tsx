@@ -3,8 +3,7 @@
 import { useParams } from 'next/navigation';
 
 import { Card, CardContent } from "@/components/ui/card";
-import { useContext, useEffect, useRef, useState } from 'react';
-import { SocketContext } from '@/context/socketContext';
+import { useContext, useEffect, useRef } from 'react';
 import { ChatContext } from '@/context/chatContext';
 
 

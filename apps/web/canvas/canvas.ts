@@ -1,5 +1,5 @@
 
-import { Line, Rectangle, Shape , circle } from "./shape";
+import { Line, Rectangle, Shape , circle, freeDraw } from "./shape";
 
 export class Canvas {
   private canvas: HTMLCanvasElement;
@@ -56,11 +56,26 @@ render(shapes: Shape[]) {
       if(shape.type === "circle"){
         this.drawCircle(shape)
       }
+      if(shape.type === "free-Draw"){
+        this.freeDraw(shape)
+      }
     });
     this.ctx.restore();
 }
 
+  private freeDraw(shape : freeDraw){
+    const points = shape.points;
+    if (points.length < 2) return;
 
+    this.ctx.beginPath();
+    this.ctx.moveTo(points[0].x, points[0].y);
+
+    for (let i = 1; i < points.length; i++) {
+      this.ctx.lineTo(points[i].x, points[i].y);
+    }
+
+    this.ctx.stroke();
+  }
 
   private drawCircle(circle: circle) {
   
