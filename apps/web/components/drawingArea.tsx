@@ -42,30 +42,16 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
 
   const x = e.clientX - rect.left;
   const y = e.clientY - rect.top;
-
-  const offset = canvasInstanceRef.current?.getOffset() || { x: 0, y: 0 };
-
+  const instance = canvasInstanceRef.current ;
+  if(!instance) return {x:0,y:0};
+  const {offset , scale } = instance.getViewport() ;
   return {
-    x: x - offset.x,
-    y: y - offset.y,
+    x: (x - offset.x)  / scale,
+    y: (y - offset.y) / scale ,
   };
 };
 
 
- const getPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
-  const rect = e.currentTarget.getBoundingClientRect();
-
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-
-  
- const offset = canvasInstanceRef.current?.getOffset() || { x: 0, y: 0 };
-
-  return {
-    x: x - offset.x,
-    y: y - offset.y,
-  };
-};
 
 
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -73,11 +59,11 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
       panStart.current = getScreenPoint(e);
       return;
     }
-  if (tool === "free-draw") {
-    isDrawing.current = true;
-    currentPath.current = [getWorldPoint(e)];
-    return;
-  }
+    if (tool === "free-draw") {
+      isDrawing.current = true;
+      currentPath.current = [getWorldPoint(e)];
+      return;
+    }
     startPoint.current = getWorldPoint(e);
     isDrawing.current = true;
   };
@@ -93,9 +79,14 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
       const dy = current.y - panStart.current.y;
       
       canvasInstanceRef.current.pan(dx, dy);
-      
+      const { scale, offset } = canvasInstanceRef.current.getViewport()!;
+        socket?.send(JSON.stringify({
+          type: "viewport",
+          roomId,
+          userId: user.id,
+          payload: { scale, offset }
+        }));
       panStart.current = current;
-      
       forceRender((p) => p + 1);      
       return;
     }
@@ -148,7 +139,7 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
       });
     } else if (tool === "circle") {
 
-      const current = getPoint(e);
+      const current = getWorldPoint(e);
       const dx = current.x - startPoint.current.x;
       const dy = current.y - startPoint.current.y;
       const radius = Math.sqrt(dx * dx + dy * dy);
@@ -233,7 +224,7 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
 
     if (!isDrawing.current || !startPoint.current) return;
 
-    const end = getPoint(e);
+    const end = getWorldPoint(e);
 
     let newShape: Shape;
 
@@ -285,6 +276,33 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
 
 
   useEffect(() =>{
+    if(!canvasRef.current) return
+    const canvas = canvasRef.current
+    const handleWheel = (e: WheelEvent) => {
+        e.preventDefault();
+
+        const rect = canvas.getBoundingClientRect();
+
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        canvasInstanceRef.current?.zoom(e.deltaY, mouseX, mouseY);
+        const data = canvasInstanceRef.current?.getViewport() ;
+        if(!data)return 
+        const {scale , offset} = data
+        console.log("ZOOM EVENT FIRED");
+        console.log("ZOOM DATA", { scale, offset });
+        console.log("handel wheel socket is" ,socket)
+        socket?.send(JSON.stringify({
+          type: "viewport",
+          roomId,
+          userId: user.id,
+          payload: { scale , offset }
+        }));
+        
+        forceRender((p) => p + 1);
+    };
+    canvas.addEventListener("wheel", handleWheel);
 
     const handleDraw = (e: MessageEvent) => {
       const data = JSON.parse(e.data);
@@ -296,7 +314,17 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
         setPreviewShape(null)
         setShapes((prev) =>[...prev , data.payload.message])
       }
-  };
+      if (data.type === "viewport") {
+        const instance = canvasInstanceRef.current;
+        if (!instance) return;
+
+        const { scale, offset } = data.payload;
+
+        instance.setViewport(scale, offset);
+
+        forceRender((p) => p + 1);
+      }
+    } ;
 
     socket?.addEventListener("message" , handleDraw)
     if(!isConnected){
@@ -306,6 +334,7 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
     }
 
     return () =>{
+      canvas.removeEventListener("wheel", handleWheel); 
       socket?.removeEventListener("message" , handleDraw)
     }
   } , [isConnected])
@@ -326,8 +355,9 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
     window.addEventListener("resize", resize);
     canvasInstanceRef.current = new Canvas(canvas);
     
-    
-    return () => window.removeEventListener("resize", resize);
+    return () => {
+    window.removeEventListener("resize", resize);
+  };
   }, []);
 
 

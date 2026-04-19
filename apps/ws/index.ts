@@ -116,7 +116,16 @@ wss.on("connection", async (ws, req) => {
         await pub.publish(`room:${roomId}`, JSON.stringify(event));
       }
 
-
+      if(type === "viewport"){
+        console.log(payload)
+        const event = {
+          type: "viewport",
+          roomId,
+          payload,
+          userId,
+        };
+        await pub.publish(`room:${roomId}`, JSON.stringify(event));
+      }
       
       if(type === "draw"){
         if(!room) return ;

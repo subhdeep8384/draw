@@ -4,8 +4,8 @@ import { Line, Rectangle, Shape , circle, freeDraw } from "./shape";
 export class Canvas {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
-  private offset = { x: 0, y: 0 }; //give the position of el when we mouse down 
-
+  private offset = { x: 0, y: 0 };
+  private scale = 1; //zoom effectt
 
 
   constructor(canvas: HTMLCanvasElement) {
@@ -33,6 +33,17 @@ export class Canvas {
 getOffset() {
   return this.offset;
 } 
+getViewport() {
+  return {
+    scale: this.scale,
+    offset: this.offset
+  };
+}
+
+setViewport(scale: number, offset: { x: number; y: number }) {
+  this.scale = scale;
+  this.offset = offset;
+}
 
 render(shapes: Shape[]) {
     const ctx = this.ctx;
@@ -40,11 +51,12 @@ render(shapes: Shape[]) {
 
     this.ctx.save();
     this.ctx.translate(this.offset.x, this.offset.y);
+    this.ctx.scale(this.scale, this.scale);
 
     shapes.forEach((shape) => {
       ctx.beginPath();
       ctx.strokeStyle = "white"; 
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2 / this.scale;
 
       if (shape.type === "rectangle") {
         this.drawRectangle(shape)
@@ -91,5 +103,22 @@ render(shapes: Shape[]) {
     this.ctx.moveTo(line.x1, line.y1);
     this.ctx.lineTo(line.x2, line.y2);
     this.ctx.stroke();
+  }
+
+  zoom(delta: number, mouseX: number, mouseY: number) {
+    const zoomFactor = 1.1;
+
+    const newScale =
+      delta > 0 ? this.scale / zoomFactor : this.scale * zoomFactor;
+
+    
+    const worldX = (mouseX - this.offset.x) / this.scale;
+    const worldY = (mouseY - this.offset.y) / this.scale;
+
+    this.scale = newScale;
+
+    
+    this.offset.x = mouseX - worldX * this.scale;
+    this.offset.y = mouseY - worldY * this.scale;
   }
 }
