@@ -32,11 +32,19 @@ const NavBar = () => {
     useEffect(() =>{
         const fetchSession = async () => {
             const res = await authClient.getSession()
-            setSession({
-                email : res.data?.user.email || "" ,
-                id : res.data?.user.id || "", 
-                name : res.data?.user.name || "" 
-            })
+            if(res.data?.user){
+                setSession({
+                    email : res.data?.user.email || "" ,
+                    id : res.data?.user.id || "", 
+                    name : res.data?.user.name || "" 
+                })
+            }else{
+                setSession({
+                    email : "" ,
+                    id : "" ,
+                    name : ""
+                })
+            }
           }
           fetchSession()
     } , [] )

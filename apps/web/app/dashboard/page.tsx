@@ -11,7 +11,7 @@ import {
 import { authClient } from "../../lib/authClient"
 import axios from 'axios';
 import { useRouter } from 'next/navigation';
-import React, { useEffect, useState } from 'react'
+import  { useEffect, useState } from 'react'
 import { CreateRoomForm } from "@/components/createRoomForm";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";

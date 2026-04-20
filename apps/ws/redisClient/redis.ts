@@ -1,4 +1,5 @@
 import { createTelemetry } from "better-auth";
+
 import {
     createClient ,
 } from "redis";
@@ -6,7 +7,7 @@ import type { RedisClientType } from "redis";
 
 let pubClient:RedisClientType ;
 let subClient:RedisClientType;
-
+console.log("the env is ::" ,process.env.REDIS_URL)
 export async function createRedisClient() {
     if (!pubClient || !subClient) {
         pubClient = createClient();

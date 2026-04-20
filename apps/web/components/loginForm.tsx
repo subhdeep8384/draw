@@ -19,16 +19,16 @@ import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { toast } from "sonner"
 import { authClient } from "@/lib/authClient"
+import { SignUp } from "./signUpForm"
 
 
 interface LoginFormProps {
     formOpen : boolean
-    setFormOpen : (value : boolean) => void
+    setFormOpen : React.Dispatch<React.SetStateAction<boolean>> 
 }
 export function LoginForm({
     formOpen , setFormOpen
 }  : LoginFormProps) {
-
   const formLoginSchema = z.object({
     email : z.string().email(),
     password : z.string().min(6)
@@ -61,9 +61,11 @@ export function LoginForm({
       setLoading(false)
     }
   }
-
+  
+  const [openSignUp , setOpenSignUp ]= useState<boolean>(false)
   return (
     <Dialog open={formOpen} onOpenChange={setFormOpen}>
+      <SignUp openSignUp={openSignUp} setOpenSignUp={setOpenSignUp} setFormOpen={setFormOpen}/>
         <DialogContent className="sm:max-w-sm">
         <form onSubmit={handleSubmit(submit)} >
           <DialogHeader>
@@ -94,8 +96,12 @@ export function LoginForm({
               }</Button>
           </DialogFooter>
 
-          <div>
-          Do not have an account ? <a href="#">Sign up</a>
+          <div className="flex gap-2">
+          Do not have an account ?<div className="hover:bg-slate-600 rounded-3xl px-3"
+            onClick={() => setOpenSignUp(t => !t)}
+          >
+            signup
+          </div>
           </div>
         </form>
         </DialogContent>

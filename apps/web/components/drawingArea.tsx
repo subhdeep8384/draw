@@ -13,8 +13,11 @@ import { toast } from "sonner";
 export default function DrawingArea({session , roomId} : any  ) {
   const {session : data , user } = session
   const [renderTick, forceRender] = useState(0);
+
+
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const canvasInstanceRef = useRef<Canvas | null>(null);
+  
 
   const [previewShape, setPreviewShape] = useState<Shape | null>(null);
   const [shapes, setShapes] = useState<Shape[]>([]);
@@ -22,8 +25,8 @@ export default function DrawingArea({session , roomId} : any  ) {
   const [tool, setTool] = useState<ToolType>("circle");
 
   const currentPath = useRef<{ x: number; y: number }[]>([]);
-  const isDrawing = useRef(false);
   const startPoint = useRef<{ x: number; y: number } | null>(null);
+  const isDrawing = useRef(false);
 
   const panStart = useRef<{ x: number; y: number } | null>(null);
   const { socket , isConnected } = useContext(SocketContext)
