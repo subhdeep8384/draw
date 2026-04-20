@@ -3,10 +3,14 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider"
 import { Toaster } from "@/components/ui/sonner"
+import { Patrick_Hand, Kalam , Oi } from "next/font/google";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
 });
+const hand = Patrick_Hand({ weight: "400", subsets: ["latin"] });
+const kalam = Kalam({ weight: "400", subsets: ["latin"] });
+const oi = Oi({ weight: "400", subsets: ["latin"] });
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
@@ -26,7 +30,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${hand.className} h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full flex flex-col">   
