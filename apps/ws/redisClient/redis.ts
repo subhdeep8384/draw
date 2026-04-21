@@ -7,11 +7,11 @@ import type { RedisClientType } from "redis";
 
 let pubClient:RedisClientType ;
 let subClient:RedisClientType;
-console.log("the env is ::" ,process.env.REDIS_URL)
+const REDIS_URL = "redis://redis:6379";
 export async function createRedisClient() {
     if (!pubClient || !subClient) {
-        pubClient = createClient();
-        subClient = createClient();
+        pubClient = createClient({url : REDIS_URL});
+        subClient = createClient({url : REDIS_URL});
 
         pubClient.on("error", (err) => console.error("Redis Pub Error:", err));
         subClient.on("error", (err) => console.error("Redis Sub Error:", err));
