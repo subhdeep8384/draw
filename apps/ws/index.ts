@@ -48,6 +48,7 @@ await sub.pSubscribe("room:*", async (message, channel) => {
 wss.on("connection", async (ws, req) => {
   try {
     const cookie = getBetterAuthCookie(req.headers.cookie);
+    console.log("the cookie is " ,cookie)
     if (!cookie) return ws.close();
 
     const session = await auth.api.getSession({
@@ -131,6 +132,16 @@ wss.on("connection", async (ws, req) => {
         if(!room) return ;
         const event = {
           type: "draw",
+          roomId,
+          payload
+        };
+        await pub.publish(`room:${roomId}`, JSON.stringify(event));
+      }
+
+       if(type === "selection"){
+        if(!room) return ;
+        const event = {
+          type: "selection",
           roomId,
           payload
         };

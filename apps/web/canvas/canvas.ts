@@ -1,12 +1,11 @@
 
-import { Line, Rectangle, Shape , circle, freeDraw } from "./shape";
+import { Line, Rectangle, Shape, circle, freeDraw } from "./shape";
 
 export class Canvas {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private offset = { x: 0, y: 0 };
-  private scale = 1; //zoom effectt
-
+  private scale = 1;
 
   constructor(canvas: HTMLCanvasElement) {
     const ctx = canvas.getContext("2d");
@@ -19,7 +18,16 @@ export class Canvas {
     this.ctx = ctx;
   }
 
-  
+  isPointInsideRectangle(x: number, y: number, rect: Rectangle) {
+    return (
+      x >= rect.x &&
+      x <= rect.x + rect.width &&
+      y >= rect.y &&
+      y <= rect.y + rect.height
+    )
+  }
+
+
   pan(dx: number, dy: number) {
     this.offset.x += dx;
     this.offset.y += dy;
@@ -30,22 +38,24 @@ export class Canvas {
   }
 
 
-getOffset() {
-  return this.offset;
-} 
-getViewport() {
-  return {
-    scale: this.scale,
-    offset: this.offset
-  };
-}
+  getOffset() {
+    return this.offset;
+  }
+  getViewport() {
+    return {
+      scale: this.scale,
+      offset: this.offset
+    };
+  }
 
-setViewport(scale: number, offset: { x: number; y: number }) {
-  this.scale = scale;
-  this.offset = offset;
-}
+  setViewport(scale: number, offset: { x: number; y: number }) {
+    this.scale = scale;
+    this.offset = offset;
+  }
 
-render(shapes: Shape[]) {
+
+
+  render(shapes: Shape[], selectedId?: Set<string> | null) {
     const ctx = this.ctx;
     this.clear();
 
@@ -53,29 +63,43 @@ render(shapes: Shape[]) {
     this.ctx.translate(this.offset.x, this.offset.y);
     this.ctx.scale(this.scale, this.scale);
 
+
+
     shapes.forEach((shape) => {
       ctx.beginPath();
-      ctx.strokeStyle = "white"; 
-      ctx.lineWidth = 2 / this.scale;
+
+      if (
+        shape.id &&
+        selectedId?.has(shape.id)
+      ) {
+        ctx.strokeStyle = "red";
+        ctx.lineWidth = 4 / this.scale;
+      } else {
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = 2 / this.scale;
+      }
 
       if (shape.type === "rectangle") {
-        this.drawRectangle(shape)
+        this.drawRectangle(shape);
       }
 
       if (shape.type === "line") {
-        this.drawLine(shape)
+        this.drawLine(shape);
       }
-      if(shape.type === "circle"){
-        this.drawCircle(shape)
+
+      if (shape.type === "circle") {
+        this.drawCircle(shape);
       }
-      if(shape.type === "free-Draw"){
-        this.freeDraw(shape)
+
+      if (shape.type === "free-Draw") {
+        this.freeDraw(shape);
       }
     });
     this.ctx.restore();
-}
+  }
 
-  private freeDraw(shape : freeDraw){
+
+  private freeDraw(shape: freeDraw) {
     const points = shape.points;
     if (points.length < 2) return;
 
@@ -90,7 +114,6 @@ render(shapes: Shape[]) {
   }
 
   private drawCircle(circle: circle) {
-  
     this.ctx.arc(circle.x, circle.y, circle.radius, 0, Math.PI * 2);
     this.ctx.stroke();
   }
@@ -111,13 +134,13 @@ render(shapes: Shape[]) {
     const newScale =
       delta > 0 ? this.scale / zoomFactor : this.scale * zoomFactor;
 
-    
+
     const worldX = (mouseX - this.offset.x) / this.scale;
     const worldY = (mouseY - this.offset.y) / this.scale;
 
     this.scale = newScale;
 
-    
+
     this.offset.x = mouseX - worldX * this.scale;
     this.offset.y = mouseY - worldY * this.scale;
   }

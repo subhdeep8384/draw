@@ -1,4 +1,8 @@
-export interface Rectangle {
+export interface BaseShape {
+  id: string;
+}
+
+export interface Rectangle extends BaseShape {
     type : "rectangle";
     x :number ;
     y:number ;
@@ -6,7 +10,8 @@ export interface Rectangle {
     height : number ;
 }
 
-export interface Line {
+
+export interface Line extends BaseShape{
     type:"line";
     x1:number; 
     y1:number ;  
@@ -14,14 +19,14 @@ export interface Line {
     y2:number ;
 }
 
-export interface circle {
+export interface circle extends BaseShape{
   type: "circle";
   x: number;
   y: number;
   radius: number;
 }
 
-export interface freeDraw{
+export interface freeDraw extends BaseShape{
     type : "free-Draw",
     points: { x: number; y: number }[];
 }

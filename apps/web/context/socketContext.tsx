@@ -1,5 +1,6 @@
 import { createContext, useContext } from "react";
-type SocketContextType = {
+
+interface SocketContextType  {
   socket: WebSocket | null;
   isConnected: boolean;
 };

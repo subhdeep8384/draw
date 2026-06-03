@@ -10,7 +10,7 @@ declare global {
   }
 
 
-export async function authMiddleware(req : Request , res : Response, next : NextFunction){
+export async function authMiddleware(req : Request , res : Response, next : NextFunction) : Promise<string> {
     const cookie = req.headers.cookie ;
     const session = await auth.api.getSession({
         headers : { cookie }
@@ -18,9 +18,10 @@ export async function authMiddleware(req : Request , res : Response, next : Next
 
     if(!session){
         res.status(401).json({ error : "Unauthorized" })
-        return ;
+        return  "ok";
     }
 
     req.session = session;
     next() ;
+    return "done"
 }

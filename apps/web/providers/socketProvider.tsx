@@ -1,17 +1,14 @@
 import { SocketContext } from "@/context/socketContext";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
-type SocketContextType = {
-  socket: WebSocket | null;
-  isConnected: boolean;
-};
+
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
   const [socket, setSocket] = useState<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const ws = new WebSocket(process.env.WS_SERVER as string);
+    const ws = new WebSocket("ws://localhost:5000");
     ws.onmessage = (e) =>{
       setIsConnected(true);
     }

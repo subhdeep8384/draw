@@ -7,17 +7,19 @@ import { ToolsArray } from "./toolsArray";
 import { Tool, ToolType } from "@/types/Tools";
 import { SocketContext } from "@/context/socketContext";
 import { toast } from "sonner";
+import { intersectsSelectionBox } from "@/lib/getClickedShapes";
 
 
 
-export default function DrawingArea({session , roomId} : any  ) {
-  const {session : data , user } = session
+export default function DrawingArea({ session, roomId }: any) {
+  const { session: data, user } = session
   const [renderTick, forceRender] = useState(0);
+  const { socket, isConnected } = useContext(SocketContext)
 
 
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const canvasInstanceRef = useRef<Canvas | null>(null);
-  
+
 
   const [previewShape, setPreviewShape] = useState<Shape | null>(null);
   const [shapes, setShapes] = useState<Shape[]>([]);
@@ -29,7 +31,14 @@ export default function DrawingArea({session , roomId} : any  ) {
   const isDrawing = useRef(false);
 
   const panStart = useRef<{ x: number; y: number } | null>(null);
-  const { socket , isConnected } = useContext(SocketContext)
+  const [selectedShapeId, setSelectedShapeId] = useState<Set<string>>(new Set());
+  const [selectionBox, setSelectionBox] = useState<{
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  } | null>(null);
+
 
   const getScreenPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -40,19 +49,19 @@ export default function DrawingArea({session , roomId} : any  ) {
     };
   };
 
-const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
-  const rect = e.currentTarget.getBoundingClientRect();
+  const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
 
-  const x = e.clientX - rect.left;
-  const y = e.clientY - rect.top;
-  const instance = canvasInstanceRef.current ;
-  if(!instance) return {x:0,y:0};
-  const {offset , scale } = instance.getViewport() ;
-  return {
-    x: (x - offset.x)  / scale,
-    y: (y - offset.y) / scale ,
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const instance = canvasInstanceRef.current;
+    if (!instance) return { x: 0, y: 0 };
+    const { offset, scale } = instance.getViewport();
+    return {
+      x: (x - offset.x) / scale,
+      y: (y - offset.y) / scale,
+    };
   };
-};
 
 
 
@@ -60,11 +69,18 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (tool === "grab") {
       panStart.current = getScreenPoint(e);
+      console.log(panStart.current)
       return;
     }
     if (tool === "free-draw") {
       isDrawing.current = true;
       currentPath.current = [getWorldPoint(e)];
+      return;
+    }
+
+    if (tool === "selection") {
+      startPoint.current = getWorldPoint(e);
+      isDrawing.current = true;
       return;
     }
     startPoint.current = getWorldPoint(e);
@@ -74,66 +90,81 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
 
     const current = getWorldPoint(e)
-    
-    
+
+    if (tool === "selection" && isDrawing.current && startPoint.current) {
+      const current = getWorldPoint(e);
+
+      setSelectionBox({
+        x: startPoint.current.x,
+        y: startPoint.current.y,
+        width: current.x - startPoint.current.x,
+        height: current.y - startPoint.current.y,
+      });
+      return;
+    }
+
     if (tool === "grab" && panStart.current && canvasInstanceRef.current) {
       const current = getScreenPoint(e);
       const dx = current.x - panStart.current.x;
       const dy = current.y - panStart.current.y;
-      
+
       canvasInstanceRef.current.pan(dx, dy);
       const { scale, offset } = canvasInstanceRef.current.getViewport()!;
-        socket?.send(JSON.stringify({
-          type: "viewport",
-          roomId,
-          userId: user.id,
-          payload: { scale, offset }
-        }));
+
+      socket?.send(JSON.stringify({
+        type: "viewport",
+        roomId,
+        userId: user.id,
+        payload: { scale, offset }
+      }));
       panStart.current = current;
-      forceRender((p) => p + 1);      
+      forceRender((p) => p + 1);
       return;
     }
     if (tool === "free-draw" && isDrawing.current) {
       const point = getWorldPoint(e);
       currentPath.current.push(point);
 
-      const shape : freeDraw = {
+      const shape: freeDraw = {
+        id: crypto.randomUUID(),
         type: "free-Draw",
         points: [...currentPath.current],
       };
 
-    setPreviewShape(shape);
+      setPreviewShape(shape);
 
-    socket?.send(JSON.stringify({
-      type: "preview",
-      roomId,
-      userId: user.id,
-      payload: { message: shape }
-    }));
+      socket?.send(JSON.stringify({
+        type: "preview",
+        roomId,
+        userId: user.id,
+        payload: { message: shape }
+      }));
 
-    return;
-  }
-    
+      return;
+    }
+
     if (!isDrawing.current || !startPoint.current) return;
 
     if (tool === "rectangle") {
-     
+
       socket?.send(JSON.stringify({
-        type : "preview",
-        roomId : roomId,
-        userId : user.id,
-        payload :{
-          message :{
+        type: "preview",
+        roomId: roomId,
+        userId: user.id,
+        payload: {
+          message: {
             type: "rectangle",
             x: startPoint.current.x,
             y: startPoint.current.y,
             width: current.x - startPoint.current.x,
             height: current.y - startPoint.current.y,
+          }
         }
-      }}))
+      }))
 
 
       setPreviewShape({
+        id: crypto.randomUUID(),
         type: "rectangle",
         x: startPoint.current.x,
         y: startPoint.current.y,
@@ -147,24 +178,26 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
       const dy = current.y - startPoint.current.y;
       const radius = Math.sqrt(dx * dx + dy * dy);
 
-   
+
 
       socket?.send(JSON.stringify({
-        type : "preview",
-        roomId : roomId,
-        userId : user.id,
-        payload :{
-          message :{
-        type: "circle",
-        roomId : roomId,
-        userId : user.id,
-        x: startPoint.current.x,
-        y: startPoint.current.y,
-        radius
-      }
-      }}))
+        type: "preview",
+        roomId: roomId,
+        userId: user.id,
+        payload: {
+          message: {
+            type: "circle",
+            roomId: roomId,
+            userId: user.id,
+            x: startPoint.current.x,
+            y: startPoint.current.y,
+            radius
+          }
+        }
+      }))
 
       setPreviewShape({
+        id: crypto.randomUUID(),
         type: "circle",
         x: startPoint.current.x,
         y: startPoint.current.y,
@@ -172,24 +205,26 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
       })
     }
     else {
-    
+
       socket?.send(JSON.stringify({
-        type : "preview",
-        roomId : roomId,
-        userId : user.id,
-        payload :{
-          message :{
-                type: "line",
-                roomId : roomId,
-                userId : user.id,
-                x1: startPoint.current.x,
-                y1: startPoint.current.y,
-                x2: current.x,
-                y2: current.y,
+        type: "preview",
+        roomId: roomId,
+        userId: user.id,
+        payload: {
+          message: {
+            type: "line",
+            roomId: roomId,
+            userId: user.id,
+            x1: startPoint.current.x,
+            y1: startPoint.current.y,
+            x2: current.x,
+            y2: current.y,
           }
-      }}))
+        }
+      }))
 
       setPreviewShape({
+        id: crypto.randomUUID(),
         type: "line",
         x1: startPoint.current.x,
         y1: startPoint.current.y,
@@ -200,30 +235,64 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
   };
 
   const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (
+      tool === "selection" &&
+      selectionBox
+    ) {
+      const ids = new Set<string>();
+
+      shapes.forEach(shape => {
+        if (
+          intersectsSelectionBox(
+            shape,
+            selectionBox
+          )
+        ) {
+          ids.add(shape.id);
+        }
+      });
+
+      setSelectedShapeId(ids);
+      socket?.send(JSON.stringify({
+        type: "selection",
+        roomId: roomId,
+        userId: user.id,
+        payload: {
+          message: Array.from(ids)
+        }
+      }))
+      setSelectionBox(null);
+      isDrawing.current = false;
+
+      return;
+    }
+
+
     if (tool === "grab") {
       panStart.current = null;
       return;
     }
-   if (tool === "free-draw" && isDrawing.current) {
-      const newShape : freeDraw = {
+    if (tool === "free-draw" && isDrawing.current) {
+      const newShape: freeDraw = {
+        id: crypto.randomUUID(),
         type: "free-Draw",
         points: [...currentPath.current],
       };
 
-    setShapes(prev => [...prev, newShape]);
+      setShapes(prev => [...prev, newShape]);
 
-    socket?.send(JSON.stringify({
-      type: "draw",
-      roomId,
-      userId: user.id,
-      payload: { message: newShape }
-    }));
+      socket?.send(JSON.stringify({
+        type: "draw",
+        roomId,
+        userId: user.id,
+        payload: { message: newShape }
+      }));
 
-    isDrawing.current = false;
-    currentPath.current = [];
-    setPreviewShape(null);
-    return;
-  }
+      isDrawing.current = false;
+      currentPath.current = [];
+      setPreviewShape(null);
+      return;
+    }
 
     if (!isDrawing.current || !startPoint.current) return;
 
@@ -233,6 +302,7 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
 
     if (tool === "rectangle") {
       newShape = {
+        id: crypto.randomUUID(),
         type: "rectangle",
         x: startPoint.current.x,
         y: startPoint.current.y,
@@ -246,6 +316,7 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
       const radius = Math.sqrt(dx * dx + dy * dy);
 
       newShape = {
+        id: crypto.randomUUID(),
         type: "circle",
         x: startPoint.current.x,
         y: startPoint.current.y,
@@ -255,6 +326,7 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
 
     else {
       newShape = {
+        id: crypto.randomUUID(),
         type: "line",
         x1: startPoint.current.x,
         y1: startPoint.current.y,
@@ -262,60 +334,114 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
         y2: end.y,
       };
     }
-   
+
     socket?.send(JSON.stringify({
-      type : "draw" ,
-      roomId : roomId,
-      userId : user.id,
-      payload : {
-        message : newShape
+      type: "draw",
+      roomId: roomId,
+      userId: user.id,
+      payload: {
+        message: newShape
       }
     }))
-    setShapes((prev) => [...prev, newShape]);  
+    setShapes((prev) => [...prev, newShape]);
     isDrawing.current = false;
     startPoint.current = null;
     setPreviewShape(null);
   };
 
 
-  useEffect(() =>{
-    if(!canvasRef.current) return
+  useEffect(() => {
+
+
+    if (!canvasRef.current) return;
+
+    const canvas = canvasRef.current;
+
+    const resize = () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    };
+
+    resize();
+    window.addEventListener("resize", resize);
+    canvasInstanceRef.current = new Canvas(canvas);
+
+    return () => {
+      window.removeEventListener("resize", resize);
+    };
+  }, []);
+
+  useEffect(() => {
+    console.log("Selected shapes are" ,selectedShapeId)
+    const handleDelete = (e: KeyboardEvent) => {
+    if (e.key !== "Delete") return;
+
+    setShapes(prev =>
+      prev.filter(
+        shape =>
+          !shape.id ||
+          !selectedShapeId.has(shape.id)
+      )
+    );
+    setSelectedShapeId(new Set());
+  };
+
+  window.addEventListener("keydown", handleDelete);
+
+  return () =>
+    window.removeEventListener(
+      "keydown",
+      handleDelete
+    );
+}, [selectedShapeId]);
+
+
+  useEffect(() => {
+    if (!canvasRef.current) return
     const canvas = canvasRef.current
     const handleWheel = (e: WheelEvent) => {
-        e.preventDefault();
+      e.preventDefault();
 
-        const rect = canvas.getBoundingClientRect();
+      const rect = canvas.getBoundingClientRect();
 
-        const mouseX = e.clientX - rect.left;
-        const mouseY = e.clientY - rect.top;
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
 
-        canvasInstanceRef.current?.zoom(e.deltaY, mouseX, mouseY);
-        const data = canvasInstanceRef.current?.getViewport() ;
-        if(!data)return 
-        const {scale , offset} = data
-        console.log("ZOOM EVENT FIRED");
-        console.log("ZOOM DATA", { scale, offset });
-        console.log("handel wheel socket is" ,socket)
-        socket?.send(JSON.stringify({
-          type: "viewport",
-          roomId,
-          userId: user.id,
-          payload: { scale , offset }
-        }));
-        
-        forceRender((p) => p + 1);
+      canvasInstanceRef.current?.zoom(e.deltaY, mouseX, mouseY);
+      const data = canvasInstanceRef.current?.getViewport();
+      if (!data) return
+      const { scale, offset } = data
+      // console.log("ZOOM EVENT FIRED");
+      // console.log("ZOOM DATA", { scale, offset });
+      // console.log("handel wheel socket is" ,socket)
+      socket?.send(JSON.stringify({
+        type: "viewport",
+        roomId,
+        userId: user.id,
+        payload: { scale, offset }
+      }));
+
+      forceRender((p) => p + 1);
     };
     canvas.addEventListener("wheel", handleWheel);
 
     const handleDraw = (e: MessageEvent) => {
       const data = JSON.parse(e.data);
 
-      if(data.type === "preview"){
+      if (data.type === "preview") {
+        console.log(data.payload)
         setPreviewShape(data.payload.message)
       }
       if (data.type === "draw") {
         setPreviewShape(null)
-        setShapes((prev) =>[...prev , data.payload.message])
+        setShapes((prev) => [...prev, data.payload.message])
+      }
+      if (data.type === "selection") {
+          const deleteSet = new Set<string>(
+            data.payload?.message ?? []
+          );
+
+          setSelectedShapeId(deleteSet);
       }
       if (data.type === "viewport") {
         const instance = canvasInstanceRef.current;
@@ -327,41 +453,23 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
 
         forceRender((p) => p + 1);
       }
-    } ;
-
-    socket?.addEventListener("message" , handleDraw)
-    if(!isConnected){
-      
-    }else{
-      toast.success("connected to the room " , roomId)
-    }
-
-    return () =>{
-      canvas.removeEventListener("wheel", handleWheel); 
-      socket?.removeEventListener("message" , handleDraw)
-    }
-  } , [isConnected])
-
-  useEffect(() => {
-    
-    
-    if (!canvasRef.current) return;
-    
-    const canvas = canvasRef.current;
-    
-    const resize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
     };
-    
-    resize();
-    window.addEventListener("resize", resize);
-    canvasInstanceRef.current = new Canvas(canvas);
-    
+
+    socket?.addEventListener("message", handleDraw)
+    if (!isConnected) {
+      // toast.warning("connecting...")
+      // ma chud jaari hai yaha toast daalne mai 
+    } else {
+      toast.success("connected to the room ", roomId)
+    }
+
     return () => {
-    window.removeEventListener("resize", resize);
-  };
-  }, []);
+      canvas.removeEventListener("wheel", handleWheel);
+      socket?.removeEventListener("message", handleDraw)
+    }
+  }, [isConnected])
+
+
 
 
   useEffect(() => {
@@ -374,17 +482,17 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
       allShapes.push(previewShape);
     }
 
-    canvas.render(allShapes);
-  }, [shapes, previewShape , renderTick]);
+    canvas.render(allShapes, selectedShapeId);
+  }, [shapes, previewShape, renderTick ,  selectedShapeId]);
 
 
-   useEffect(() => {
+  useEffect(() => {
     if (selectedTool) {
       setTool(selectedTool.type as ToolType);
     }
   }, [selectedTool]);
 
-  
+
 
   return (
     <div className="w-full h-screen flex flex-col">
@@ -394,7 +502,7 @@ const getWorldPoint = (e: React.MouseEvent<HTMLCanvasElement>) => {
       <div className="flex-1">
         <canvas
           ref={canvasRef}
-          style={{ width: "100%", height: "100%", display: "block" ,cursor: tool === "grab" ? "grab" : "crosshair",}}
+          style={{ width: "100%", height: "100%", display: "block", cursor: tool === "grab" ? "grab" : "crosshair", }}
           onMouseDown={handleMouseDown}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
