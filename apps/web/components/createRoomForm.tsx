@@ -56,7 +56,7 @@ export function CreateRoomForm({
       if(action === "create"){
         try{
           setLoading(true)
-          const res = await axios.post("http://localhost:3005/api/room/create" , {
+          const res = await axios.post(`${process.env.BETTER_AUTH_URL}/api/room/create` , {
             name : data.name ,
             password : data.password
           }, {
@@ -77,7 +77,7 @@ export function CreateRoomForm({
       }
 
       if(action === "join"){
-       const res = await axios.post("http://localhost:3005/api/room/join" ,{
+       const res = await axios.post(`${process.env.BETTER_AUTH_URL}/api/room/join` ,{
         name : data.name ,
         password : data.password 
        },{
