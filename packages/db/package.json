@@ -4,7 +4,7 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "postinstall": "npx prisma generate",
+    "postinstall": "bunx prisma generate",
      "build": "tsc"
   },
   "devDependencies": {
