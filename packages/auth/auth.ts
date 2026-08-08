@@ -14,11 +14,13 @@ export const auth = betterAuth({
 
      crossSubDomainCookies: {
       enabled: true,
-      domain: "subhdeep.icu",
+      domain: ".subhdeep.icu",
     },
 
     defaultCookieAttributes: {
+      domain: ".subhdeep.icu",
       sameSite: "none",
+      httpOnly: true,
       secure: true,
     },
     
