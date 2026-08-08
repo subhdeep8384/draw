@@ -49,6 +49,7 @@ export function LoginForm({
         email : data.email,
         password : data.password 
       })
+      console.log(res)
       if(res.data?.user){
         router.push("/dashboard")
       }

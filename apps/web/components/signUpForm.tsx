@@ -53,7 +53,7 @@ const [loading , setLoading ] = useState<boolean>(false )
         email : data.email ,
         password : data.password
       })
-
+      console.log("the res is " , res)
       if(res.data?.user){
         router.push("/dashboard")
       }
