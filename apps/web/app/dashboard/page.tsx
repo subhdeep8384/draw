@@ -66,14 +66,8 @@ const DashBoard = () => {
       }
     }
 
-    const getRooms = async () => {
-      const res = await axios.get(`${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/api/room/allRooms`, {
-        withCredentials: true
-      })
-      setRoom(res.data)
-    }
     fetchSession()
-    getRooms()
+   
   }, [])
 
   return (
