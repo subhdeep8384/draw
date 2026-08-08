@@ -8,7 +8,7 @@ const app = express();
 const port = 3005;
 app.use(
     cors({
-      origin: "http://localhost:3000",
+      origin: process.env.BETTER_AUTH_FRONTEND_URL!,
       methods: ["GET", "POST", "PUT", "DELETE"], 
       credentials: true, 
     })
