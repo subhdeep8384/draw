@@ -12,11 +12,11 @@ const userSockets = new Map<string, Set<WebSocket>>();
 const roomSockets = new Map<string, Set<string>>();
 
 
-function getBetterAuthCookie(cookie: string | undefined) {
-  if (!cookie) return null;
-  const match = cookie.match(/better-auth\.session_token=([^;]+)/);
-  return match ? match[0] : null;
-}
+// function getBetterAuthCookie(cookie: string | undefined) {
+//   if (!cookie) return null;
+//   const match = cookie.match(/better-auth\.session_token=([^;]+)/);
+//   return match ? match[0] : null;
+// }
 
 
 const processedMessages = new Set<string>();
@@ -47,14 +47,14 @@ await sub.pSubscribe("room:*", async (message, channel) => {
 
 wss.on("connection", async (ws, req) => {
   try {
-    const cookie = getBetterAuthCookie(req.headers.cookie);
+    const cookie = req.headers.cookie;
     console.log("the cookie is " ,cookie)
     if (!cookie) return ws.close();
 
     const session = await auth.api.getSession({
       headers: { cookie },
     });
-  
+    console.log("the session is", session)
     if (!session) return ws.close();
 
     const userId = session.user.id;
