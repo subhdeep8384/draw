@@ -56,6 +56,7 @@ const DashBoard = () => {
   useEffect(() => {
     const fetchSession = async () => {
       const res = await authClient.getSession()
+      console.log(res)
       setSession({
         email: res.data?.user.email || "",
         id: res.data?.user.id || "",

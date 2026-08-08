@@ -21,6 +21,8 @@ const Page = async ({
   const user = await auth.api.getSession({
     headers: await headers()
   })
+
+  console.log("user is " , user)
   const { roomId } = await params
 
   const roomDetails = await prisma.room.findUnique({
