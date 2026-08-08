@@ -1,42 +1,45 @@
+"use client";
 
 import DrawingArea from "@/components/drawingArea";
-import { auth } from "@repo/auth/betterAuth";
-import { prisma } from "@repo/db/prisma";
-import { headers } from "next/headers";
+import { authClient } from "@/lib/authClient";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
 
+const Page = () => {
+  const { roomId } = useParams<{ roomId: string }>();
 
+  const [session, setSession] = useState<{
+    session: any;
+    user: any;
+  } | null>(null);
 
-interface Props {
-  params: Promise<{
-    roomId: string
-  }>
-}
+  useEffect(() => {
+    const fetchSession = async () => {
+      const res = await authClient.getSession();
 
-const Page = async ({
-  params
-}: Props) => {
+      console.log("res is", res);
 
+      if (res.data) {
+        setSession({
+          session: res.data.session,
+          user: res.data.user,
+        });
+      }
+    };
 
- 
-  const user = await auth.api.getSession({
-    headers: await headers()
-  })
-  console.log("user is " , user)
-  
-  const { roomId } = await params
+    fetchSession();
+  }, []);
 
-  const roomDetails = await prisma.room.findUnique({
-    where: {
-      id: roomId,
-      adminId: user?.user.id
-    }
-  })
-  if(!roomDetails) return ;
+  if (!session) {
+    return <div>Loading...</div>;
+  }
+
   return (
-    <div>
-      <DrawingArea session={user} roomId={roomId}/>
-    </div>
-  )
-}
+    <DrawingArea
+      session={session}
+      roomId={roomId}
+    />
+  );
+};
 
-export default Page
+export default Page;
