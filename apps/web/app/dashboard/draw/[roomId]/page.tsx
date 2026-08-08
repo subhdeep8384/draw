@@ -1,5 +1,6 @@
 
 import DrawingArea from "@/components/drawingArea";
+import { authClient } from "@/lib/authClient";
 import { auth } from "@repo/auth/betterAuth";
 import { prisma } from "@repo/db/prisma";
 import { headers } from "next/headers";
@@ -17,12 +18,12 @@ const Page = async ({
 }: Props) => {
 
 
- 
+  // const user = await authClient.getSession() ;
   const user = await auth.api.getSession({
     headers: await headers()
   })
 
-  console.log("user is " , user)
+  
   const { roomId } = await params
 
   const roomDetails = await prisma.room.findUnique({
