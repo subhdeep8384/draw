@@ -12,11 +12,6 @@ const userSockets = new Map<string, Set<WebSocket>>();
 const roomSockets = new Map<string, Set<string>>();
 
 
-// function getBetterAuthCookie(cookie: string | undefined) {
-//   if (!cookie) return null;
-//   const match = cookie.match(/better-auth\.session_token=([^;]+)/);
-//   return match ? match[0] : null;
-// }
 
 
 const processedMessages = new Set<string>();

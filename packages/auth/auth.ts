@@ -12,10 +12,16 @@ export const auth = betterAuth({
   advanced: {
     useSecureCookies: true,
 
+     crossSubDomainCookies: {
+      enabled: true,
+      domain: "subhdeep.icu",
+    },
+
     defaultCookieAttributes: {
       sameSite: "none",
       secure: true,
     },
+    
   },
 
   database: prismaAdapter(prisma, {
