@@ -7,7 +7,7 @@ export const auth = betterAuth({
     process.env.BETTER_AUTH_FRONTEND_URL!,
   ],
 
-  baseURL: process.env.BETTER_AUTH_BASE_URL!,
+  baseURL: process.env.BETTER_AUTH_URL!,
 
   advanced: {
     useSecureCookies: true,
