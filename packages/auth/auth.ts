@@ -3,17 +3,26 @@ import { prisma } from "@repo/db/prisma";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 console.log(process.env.BETTER_AUTH_FRONTEND_URL)
 export const auth = betterAuth({
-    trustedOrigins: [
-        process.env.BETTER_AUTH_FRONTEND_URL!,
-    ],
+  trustedOrigins: [
+    process.env.BETTER_AUTH_FRONTEND_URL!,
+  ],
 
-    database: prismaAdapter(prisma, {
-        provider: "postgresql",
-    }),
+  baseURL: process.env.BETTER_AUTH_BASE_URL!,
 
-    emailAndPassword: {
-        enabled: true,
+  advanced: {
+    useSecureCookies: true,
+
+    defaultCookieAttributes: {
+      sameSite: "none",
+      secure: true,
     },
+  },
 
-    baseURL: process.env.BETTER_AUTH_BASE_URL!,
+  database: prismaAdapter(prisma, {
+    provider: "postgresql",
+  }),
+
+  emailAndPassword: {
+    enabled: true,
+  },
 });
