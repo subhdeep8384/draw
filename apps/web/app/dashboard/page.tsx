@@ -43,7 +43,7 @@ const DashBoard = () => {
 
   useEffect(() => {
     const getRooms = async () => {
-      const res = await axios.get("${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/api/room/allRooms", {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/api/room/allRooms`, {
         withCredentials: true
       });
       setRoom(res.data);
@@ -67,7 +67,7 @@ const DashBoard = () => {
     }
 
     const getRooms = async () => {
-      const res = await axios.get("${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/api/room/allRooms", {
+      const res = await axios.get(`${process.env.NEXT_PUBLIC_BETTER_AUTH_URL}/api/room/allRooms`, {
         withCredentials: true
       })
       setRoom(res.data)
