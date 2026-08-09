@@ -42,22 +42,23 @@ await sub.pSubscribe("room:*", async (message, channel) => {
 
 wss.on("connection", async (ws, req) => {
   try {
-    const cookie = req.headers.cookie;
-    console.log("the cookie is " ,cookie)
-    if (!cookie) return ws.close();
+    // const cookie = req.headers.cookie;
+    // console.log("the cookie is " ,cookie)
+    // if (!cookie) return ws.close();
 
-    const session = await auth.api.getSession({
-      headers: { cookie },
-    });
-    console.log("the session is", session)
-    if (!session) return ws.close();
+    // const session = await auth.api.getSession({
+    //   headers: { cookie },
+    // });
+    // console.log("the session is", session)
+    // if (!session) return ws.close();
 
-    const userId = session.user.id;
+    // const userId = session.user.id;
 
-    if (!userSockets.has(userId)) {
-      userSockets.set(userId, new Set());
-    }
-    userSockets.get(userId)!.add(ws);
+    // if (!userSockets.has(userId)) {
+    //   userSockets.set(userId, new Set());
+    // }
+    // userSockets.get(userId)!.add(ws);
+    let userId : string | null  = null  ;
     ws.send(JSON.stringify({ type: "connected" }));
 
     ws.on("message", async (raw) => {
@@ -65,6 +66,15 @@ wss.on("connection", async (ws, req) => {
       const { type, roomId, payload } = data;
       const room = await prisma.room.findUnique({ where: { id: roomId } });
 
+      if(type == "set_user"){
+        const user = payload.message.id ;
+        console.log("user id is " , user)
+        userId = user ;
+         if (!userSockets.has(userId!)) {
+            userSockets.set(userId!, new Set());
+          }
+        userSockets.get(userId!)!.add(ws);
+      }
 
       if(type == "preview"){
         const event = {
@@ -81,9 +91,10 @@ wss.on("connection", async (ws, req) => {
         if (!roomSockets.has(roomId)) {
           roomSockets.set(roomId, new Set());
         }
-        roomSockets.get(roomId)!.add(userId);
-  
-        ws.send(JSON.stringify({ type: "joined_room", roomId }));
+        if(userId ){
+          roomSockets.get(roomId)!.add(userId);
+          ws.send(JSON.stringify({ type: "joined_room", roomId }));
+        }
         return;
       }
 
@@ -147,13 +158,13 @@ wss.on("connection", async (ws, req) => {
     
 
     ws.on("close", () => {
-      const sockets = userSockets.get(userId);
+      const sockets = userSockets.get(userId!);
       if (sockets) {
         sockets.delete(ws);
-        if (sockets.size === 0) userSockets.delete(userId);
+        if (sockets.size === 0) userSockets.delete(userId!);
       }
 
-      roomSockets.forEach((users) => users.delete(userId));
+      roomSockets.forEach((users) => users.delete(userId!));
     });
 
   } catch (err) {

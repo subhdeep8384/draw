@@ -17,6 +17,7 @@ import { SocketProvider } from '@/providers/socketProvider'
 import { ChatProvider } from '@/providers/chatProvider'
 import { ChatContext } from '@/context/chatContext'
 import { toast } from "sonner";
+import { authClient } from '@/lib/authClient'
 
 
 
@@ -49,7 +50,26 @@ export function AppSidebar() {
   const room = params.roomId as string;
   const {chats , setChats} = useContext(ChatContext)
   const { socket , isConnected} = useContext(SocketContext)
-
+  const [session, setSession] = useState<{
+      session: any;
+      user: any;
+    } | null>(null);
+  
+    useEffect(() => {
+      const fetchSession = async () => {
+        const res = await authClient.getSession();
+  
+  
+        if (res.data) {
+          setSession({
+            session: res.data.session,
+            user: res.data.user,
+          });
+        }
+      };
+  
+      fetchSession();
+    }, []);
      useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
             const data = JSON.parse(event.data);
@@ -94,10 +114,17 @@ export function AppSidebar() {
   useEffect(() => {
   if (!socket || !isConnected) return;
   socket.send(JSON.stringify({
+    "type": "set_user",
+    "roomId": room,
+    "payload": { message: session?.user }
+  }))
+
+  socket.send(JSON.stringify({
     "type": "join_room",
     "roomId": room,
     "payload": { message: "" }
-  }))}, [isConnected]);
+  }))
+  }, [session]);
 
   
     return (

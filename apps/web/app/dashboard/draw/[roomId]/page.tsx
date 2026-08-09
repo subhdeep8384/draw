@@ -1,13 +1,13 @@
 "use client";
 
 import DrawingArea from "@/components/drawingArea";
+import { useSocket } from "@/context/socketContext";
 import { authClient } from "@/lib/authClient";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 const Page = () => {
   const { roomId } = useParams<{ roomId: string }>();
-
   const [session, setSession] = useState<{
     session: any;
     user: any;
@@ -17,7 +17,6 @@ const Page = () => {
     const fetchSession = async () => {
       const res = await authClient.getSession();
 
-      console.log("res is", res);
 
       if (res.data) {
         setSession({
