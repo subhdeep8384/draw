@@ -63,6 +63,7 @@ wss.on("connection", async (ws, req) => {
 
     ws.on("message", async (raw) => {
       const data = JSON.parse(raw.toString());
+      console.log("the data is " ,data)
       const { type, roomId, payload } = data;
       const room = await prisma.room.findUnique({ where: { id: roomId } });
 
