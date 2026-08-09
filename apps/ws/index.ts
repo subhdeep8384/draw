@@ -63,13 +63,13 @@ wss.on("connection", async (ws, req) => {
 
     ws.on("message", async (raw) => {
       const data = JSON.parse(raw.toString());
-      console.log("the data is " ,data)
+
       const { type, roomId, payload } = data;
       const room = await prisma.room.findUnique({ where: { id: roomId } });
 
       if(type == "set_user"){
         const user = payload.message.id ;
-        console.log("user id is " , user)
+        
         userId = user ;
          if (!userSockets.has(userId!)) {
             userSockets.set(userId!, new Set());
@@ -79,7 +79,7 @@ wss.on("connection", async (ws, req) => {
           type : "user_set"
         }))
 
-        console.log("user done" , userId )
+      
       }
 
       if(type == "preview"){
@@ -130,7 +130,7 @@ wss.on("connection", async (ws, req) => {
       }
 
       if(type === "viewport"){
-        console.log(payload)
+   
         const event = {
           type: "viewport",
           roomId,
