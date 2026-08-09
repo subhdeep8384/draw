@@ -111,20 +111,56 @@ export function AppSidebar() {
       }));
     }
   
-  useEffect(() => {
-  if (!socket || !isConnected) return;
-  socket.send(JSON.stringify({
-    "type": "set_user",
-    "roomId": room,
-    "payload": { message: session?.user }
-  }))
+  // useEffect(() => {
+  // if (!socket || !isConnected) return;
+  // socket.send(JSON.stringify({
+  //   "type": "set_user",
+  //   "roomId": room,
+  //   "payload": { message: session?.user }
+  // }))
 
-  socket.send(JSON.stringify({
-    "type": "join_room",
-    "roomId": room,
-    "payload": { message: "" }
-  }))
-  }, [session]);
+  // socket.send(JSON.stringify({
+  //   "type": "join_room",
+  //   "roomId": room,
+  //   "payload": { message: "" }
+  // }))
+  // }, [session]);
+  useEffect(() => {
+  if (!socket || !isConnected || !session?.user) return;
+
+  socket.send(
+    JSON.stringify({
+      type: "set_user",
+      roomId: room,
+      payload: {
+        message: session.user,
+      },
+    })
+  );
+
+  const handleMessage = (event: MessageEvent) => {
+    const data = JSON.parse(event.data);
+
+    if (data.type === "user_set") {
+      console.log("joining room....")
+      socket.send(
+        JSON.stringify({
+          type: "join_room",
+          roomId: room,
+          payload: {
+            message: "",
+          },
+        })
+      );
+    }
+  };
+
+  socket.addEventListener("message", handleMessage);
+
+  return () => {
+    socket.removeEventListener("message", handleMessage);
+  };
+}, [ session , room]);
 
   
     return (

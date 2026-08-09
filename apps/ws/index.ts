@@ -75,6 +75,11 @@ wss.on("connection", async (ws, req) => {
             userSockets.set(userId!, new Set());
           }
         userSockets.get(userId!)!.add(ws);
+        ws.send(JSON.stringify({
+          type : "user_set"
+        }))
+
+        console.log("user done" , userId )
       }
 
       if(type == "preview"){
@@ -92,11 +97,11 @@ wss.on("connection", async (ws, req) => {
         if (!roomSockets.has(roomId)) {
           roomSockets.set(roomId, new Set());
         }
-        if(userId ){
+        if( userId ){
           roomSockets.get(roomId)!.add(userId);
           ws.send(JSON.stringify({ type: "joined_room", roomId }));
+          return;
         }
-        return;
       }
 
       if (type === "chat") {
